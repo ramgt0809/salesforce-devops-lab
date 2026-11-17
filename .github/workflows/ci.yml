@@ -60,5 +60,5 @@ jobs:
 
       - name: Confirm connection
         run: |
-          sf org list --target-org devorg
+          sf org display --target-org devorg
           echo "Salesforce authentication succeeded"
