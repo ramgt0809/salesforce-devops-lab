@@ -62,3 +62,15 @@ jobs:
         run: |
           sf org display --target-org devorg
           echo "Salesforce authentication succeeded"
+
+
+      - name: Validate Salesforce deployment
+        run: |
+          sf project deploy start \
+            --manifest manifest/package.xml \
+            --target-org devorg \
+            --dry-run \
+            --test-level RunSpecifiedTests \
+            --tests RevenueCalculatorTest \
+            --wait 30
+
