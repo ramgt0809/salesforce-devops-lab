@@ -70,7 +70,6 @@ jobs:
             --manifest manifest/package.xml \
             --target-org devorg \
             --dry-run \
-            --test-level RunSpecifiedTests \
-            --tests RevenueCalculatorTest \
+            --test-level RunLocalTests \
             --wait 30
 
