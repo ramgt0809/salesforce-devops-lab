@@ -19,32 +19,26 @@ jobs:
         run: npm install --global @salesforce/cli
 
       
+     
       - name: Prepare and validate JWT private key
         env:
-          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
+          SF_JWT_KEY_B64: ${{ secrets.SF_JWT_KEY_B64 }}
         shell: bash
         run: |
-          if [ -z "$SF_JWT_KEY" ]; then
-            echo "::error::SF_JWT_KEY secret is empty or unavailable"
+          if [ -z "$SF_JWT_KEY_B64" ]; then
+            echo "::error::JWT key secret is missing"
             exit 1
           fi
 
-          printf '%s\n' "$SF_JWT_KEY" > "$RUNNER_TEMP/server.key"
+          printf '%s' "$SF_JWT_KEY_B64" |
+            base64 --decode > "$RUNNER_TEMP/server.key"
+
           chmod 600 "$RUNNER_TEMP/server.key"
-
-          if ! openssl pkey \
-            -in "$RUNNER_TEMP/server.key" \
-            -noout \
-            > /dev/null 2>&1; then
-            echo "::error::Invalid PEM private key"
-            exit 1
-          fi
 
           if ! openssl rsa \
             -in "$RUNNER_TEMP/server.key" \
-            -check -noout \
-            > /dev/null 2>&1; then
-            echo "::error::Private key is not a valid RSA key"
+            -check -noout > /dev/null 2>&1; then
+            echo "::error::Invalid RSA private key"
             exit 1
           fi
 
