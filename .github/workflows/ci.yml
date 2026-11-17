@@ -1,30 +1,44 @@
 
-name: Salesforce DevOps - CI
+name: Salesforce JWT Connection Test
 
 on:
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  pipeline-check:
+  connect:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install Salesforce CLI
         run: npm install --global @salesforce/cli
 
-      - name: Verify Salesforce CLI
-        run: sf --version
-
-      - name: Inspect project
+      - name: Prepare JWT private key
+        env:
+          SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
         run: |
-          echo "Repository: $GITHUB_REPOSITORY"
-          echo "Commit: $GITHUB_SHA"
-          ls -la
+          printf '%s\n' "$SF_JWT_KEY" > "$RUNNER_TEMP/server.key"
+          chmod 600 "$RUNNER_TEMP/server.key"
+
+      - name: Authenticate to Salesforce
+        env:
+          SF_CLIENT_ID: ${{ secrets.SF_CLIENT_ID }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+          SF_INSTANCE_URL: ${{ secrets.SF_INSTANCE_URL }}
+        run: |
+          sf org login jwt \
+            --client-id "$SF_CLIENT_ID" \
+            --jwt-key-file "$RUNNER_TEMP/server.key" \
+            --username "$SF_USERNAME" \
+            --instance-url "$SF_INSTANCE_URL" \
+            --alias devorg
+
+      - name: Confirm connection
+        run: |
+          sf org list --target-org devorg
+          echo "Salesforce authentication succeeded"
