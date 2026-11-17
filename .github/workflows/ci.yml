@@ -1,7 +1,11 @@
 
-name: Salesforce JWT Connection Test
+name: Salesforce CI/CD
 
 on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -64,7 +68,9 @@ jobs:
           echo "Salesforce authentication succeeded"
 
 
-      - name: Validate Salesforce deployment
+      # PRs and manual runs only validate; no changes are written to Salesforce.
+      - name: Validate Salesforce deployment (PR or manual)
+        if: github.event_name != 'push'
         run: |
           sf project deploy start \
             --manifest manifest/package.xml \
@@ -73,3 +79,12 @@ jobs:
             --test-level RunLocalTests \
             --wait 30
 
+      # A successful merge to main creates a push event and deploys the manifest.
+      - name: Deploy to Salesforce (main branch)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          sf project deploy start \
+            --manifest manifest/package.xml \
+            --target-org devorg \
+            --test-level RunLocalTests \
+            --wait 30
