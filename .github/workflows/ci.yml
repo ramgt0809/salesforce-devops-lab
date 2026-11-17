@@ -18,12 +18,38 @@ jobs:
       - name: Install Salesforce CLI
         run: npm install --global @salesforce/cli
 
-      - name: Prepare JWT private key
+      
+      - name: Prepare and validate JWT private key
         env:
           SF_JWT_KEY: ${{ secrets.SF_JWT_KEY }}
+        shell: bash
         run: |
+          if [ -z "$SF_JWT_KEY" ]; then
+            echo "::error::SF_JWT_KEY secret is empty or unavailable"
+            exit 1
+          fi
+
           printf '%s\n' "$SF_JWT_KEY" > "$RUNNER_TEMP/server.key"
           chmod 600 "$RUNNER_TEMP/server.key"
+
+          if ! openssl pkey \
+            -in "$RUNNER_TEMP/server.key" \
+            -noout \
+            > /dev/null 2>&1; then
+            echo "::error::Invalid PEM private key"
+            exit 1
+          fi
+
+          if ! openssl rsa \
+            -in "$RUNNER_TEMP/server.key" \
+            -check -noout \
+            > /dev/null 2>&1; then
+            echo "::error::Private key is not a valid RSA key"
+            exit 1
+          fi
+
+          echo "RSA private key validation passed"
+
 
       - name: Authenticate to Salesforce
         env:
