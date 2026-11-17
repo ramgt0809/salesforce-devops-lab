@@ -72,5 +72,6 @@ jobs:
             --dry-run \
             --test-level RunSpecifiedTests \
             --tests RevenueCalculatorTest \
+            --tests PricingServiceTest \
             --wait 30
 
